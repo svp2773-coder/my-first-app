@@ -147,7 +147,7 @@
       flex-shrink: 0;
     }
 
-    .todo .text { flex: 1; word-break: break-all; }
+    .todo .text { flex: 1; min-width: 0; word-break: keep-all; overflow-wrap: anywhere; }
     .todo .date { color: var(--muted); font-size: 17px; white-space: nowrap; }
 
     .dday {
@@ -178,6 +178,37 @@
     .del-btn:hover { background: var(--red-bg); color: var(--red); }
 
     .empty { color: var(--muted); text-align: center; padding: 20px 0; margin: 0; }
+
+    /* 휴대폰 화면: 한 항목을 두 줄로 (1줄: 체크+할 일, 2줄: 날짜·D-Day·삭제) */
+    @media (max-width: 600px) {
+      body { font-size: 18px; }
+      .container { padding: 20px 12px 40px; }
+      h1 { font-size: 26px; }
+      h2 { font-size: 21px; }
+      .card { padding: 18px 16px; }
+
+      .alert-list li { font-size: 18px; }
+
+      input[type="text"] { flex: 1 1 100%; }
+      input[type="date"] { flex: 1 1 auto; }
+
+      .todo {
+        display: grid;
+        grid-template-columns: 26px 1fr auto auto;
+        grid-template-areas:
+          "check text text text"
+          ".     date dday del";
+        column-gap: 10px;
+        row-gap: 8px;
+        align-items: center;
+        padding: 14px 4px;
+      }
+      .todo input[type="checkbox"] { grid-area: check; }
+      .todo .text { grid-area: text; font-size: 19px; }
+      .todo .date { grid-area: date; font-size: 15px; }
+      .todo .dday { grid-area: dday; min-width: 64px; font-size: 16px; }
+      .todo .del-btn { grid-area: del; font-size: 15px; padding: 6px 12px; }
+    }
   </style>
 </head>
 <body>
