@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>마감일 할 일 알리미</title>
+  <style>
+    :root {
+      --bg: #f4f6fa;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --red: #dc2626;
+      --red-bg: #fef2f2;
+      --orange: #ea580c;
+      --orange-bg: #fff7ed;
+      --green: #16a34a;
+      --green-bg: #f0fdf4;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo", sans-serif;
+      font-size: 20px;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 32px 20px 60px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+
+    h1 { margin: 0; font-size: 34px; }
+
+    #today { font-size: 20px; color: var(--muted); }
+
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+
+    h2 { margin: 0 0 14px; font-size: 24px; }
+
+    /* 알림 영역 */
+    #alert-box.has-alert { border: 3px solid var(--red); }
+    #alert-box.all-clear { border: 3px solid var(--green); background: var(--green-bg); }
+
+    .alert-summary {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .badge {
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-weight: bold;
+      font-size: 19px;
+    }
+    .badge.overdue { background: var(--red-bg); color: var(--red); }
+    .badge.today { background: var(--orange-bg); color: var(--orange); }
+
+    .alert-list { list-style: none; margin: 0; padding: 0; }
+    .alert-list li {
+      padding: 10px 14px;
+      border-radius: 10px;
+      margin-bottom: 8px;
+      font-size: 21px;
+    }
+    .alert-list li.overdue { background: var(--red-bg); color: var(--red); }
+    .alert-list li.today { background: var(--orange-bg); color: var(--orange); }
+
+    .clear-msg { margin: 0; font-size: 22px; color: var(--green); font-weight: bold; }
+
+    /* 입력 폼 */
+    form {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    input[type="text"], input[type="date"] {
+      font-size: 20px;
+      padding: 12px 14px;
+      border: 2px solid var(--line);
+      border-radius: 10px;
+      font-family: inherit;
+    }
+    input[type="text"] { flex: 1 1 320px; }
+    input:focus { outline: none; border-color: var(--primary); }
+
+    button {
+      font-size: 20px;
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      border-radius: 10px;
+    }
+
+    .add-btn {
+      background: var(--primary);
+      color: #fff;
+      padding: 12px 28px;
+      font-weight: bold;
+    }
+    .add-btn:hover { background: var(--primary-dark); }
+
+    #form-msg { color: var(--red); margin: 10px 0 0; min-height: 1.5em; font-size: 18px; }
+
+    /* 할 일 목록 */
+    #todo-list { list-style: none; margin: 0; padding: 0; }
+
+    .todo {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 8px;
+      border-bottom: 1px solid var(--line);
+    }
+    .todo:last-child { border-bottom: none; }
+
+    .todo input[type="checkbox"] {
+      width: 26px;
+      height: 26px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .todo .text { flex: 1; word-break: break-all; }
+    .todo .date { color: var(--muted); font-size: 17px; white-space: nowrap; }
+
+    .dday {
+      min-width: 76px;
+      text-align: center;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 18px;
+      background: #eef2ff;
+      color: var(--primary);
+    }
+
+    .todo.overdue .text, .todo.overdue .dday { color: var(--red); }
+    .todo.overdue .dday { background: var(--red-bg); }
+    .todo.today .text, .todo.today .dday { color: var(--orange); }
+    .todo.today .dday { background: var(--orange-bg); }
+
+    .todo.done .text { color: var(--muted); text-decoration: line-through; }
+    .todo.done .dday { background: #f3f4f6; color: var(--muted); }
+
+    .del-btn {
+      background: #f3f4f6;
+      color: var(--muted);
+      padding: 6px 14px;
+      font-size: 17px;
+    }
+    .del-btn:hover { background: var(--red-bg); color: var(--red); }
+
+    .empty { color: var(--muted); text-align: center; padding: 20px 0; margin: 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>📋 마감일 할 일 알리미</h1>
+      <div id="today"></div>
+    </header>
+
+    <!-- 알림 영역 -->
+    <section id="alert-box" class="card" aria-live="polite">
+      <h2>🔔 오늘의 알림</h2>
+      <div id="alert-content"></div>
+    </section>
+
+    <!-- 입력 폼 -->
+    <section class="card">
+      <h2>✏️ 할 일 추가</h2>
+      <form id="todo-form">
+        <input type="text" id="todo-text" placeholder="할 일을 입력하세요 (예: 수행평가 채점)" maxlength="100" autocomplete="off">
+        <input type="date" id="todo-date" aria-label="마감일">
+        <button type="submit" class="add-btn">추가</button>
+      </form>
+      <p id="form-msg"></p>
+    </section>
+
+    <!-- 할 일 목록 -->
+    <section class="card">
+      <h2>📝 할 일 목록 <span style="font-size:17px; color:var(--muted); font-weight:normal;">(마감일 빠른 순)</span></h2>
+      <ul id="todo-list"></ul>
+    </section>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "deadline-todos";
+
+    // ---------- 날짜 도우미 ----------
+    // 오늘 날짜를 "YYYY-MM-DD" 형식으로 (내 컴퓨터 시간 기준)
+    function toDateString(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+
+    function todayString() {
+      return toDateString(new Date());
+    }
+
+    // 오늘로부터 n일 뒤 날짜 문자열 (예시 자료용)
+    function addDays(n) {
+      const d = new Date();
+      d.setDate(d.getDate() + n);
+      return toDateString(d);
+    }
+
+    // 마감일까지 남은 일수 (양수: 남음, 0: 오늘, 음수: 지남)
+    function daysLeft(dateStr) {
+      const [y, m, d] = dateStr.split("-").map(Number);
+      const due = new Date(y, m - 1, d);
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      return Math.round((due - today) / (1000 * 60 * 60 * 24));
+    }
+
+    function ddayLabel(n) {
+      if (n === 0) return "D-Day";
+      return n > 0 ? `D-${n}` : `D+${-n}`;
+    }
+
+    function formatKoreanDate(dateStr) {
+      const [y, m, d] = dateStr.split("-").map(Number);
+      const days = ["일", "월", "화", "수", "목", "금", "토"];
+      const w = days[new Date(y, m - 1, d).getDay()];
+      return `${m}월 ${d}일 (${w})`;
+    }
+
+    // ---------- 저장/불러오기 ----------
+    function loadTodos() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved !== null) return JSON.parse(saved);
+      } catch (e) {
+        // 저장소를 쓸 수 없으면 빈 상태로 시작
+      }
+      // 처음 실행할 때만 보여주는 가상 예시 자료 (실제 학생 정보 없음)
+      return [
+        { id: 1, text: "(예시) 교내 연수 결과 보고서 제출", due: addDays(-1), done: false },
+        { id: 2, text: "(예시) 1학기 수행평가 채점 마무리", due: addDays(0), done: false },
+        { id: 3, text: "(예시) 학부모 상담 주간 안내문 작성", due: addDays(3), done: false },
+        { id: 4, text: "(예시) 과학실 비품 신청서 제출", due: addDays(7), done: false },
+        { id: 5, text: "(예시) 교과협의회 회의록 정리", due: addDays(-3), done: true }
+      ];
+    }
+
+    function saveTodos() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+      } catch (e) {
+        showFormMsg("⚠️ 브라우저에 저장하지 못했어요. 새로고침하면 내용이 사라질 수 있어요.");
+      }
+    }
+
+    let todos = loadTodos();
+
+    // ---------- 화면 그리기 ----------
+    function statusOf(todo) {
+      if (todo.done) return "done";
+      const n = daysLeft(todo.due);
+      if (n < 0) return "overdue";
+      if (n === 0) return "today";
+      return "upcoming";
+    }
+
+    function renderToday() {
+      document.getElementById("today").textContent = "오늘: " + formatKoreanDate(todayString());
+    }
+
+    function renderAlerts() {
+      const box = document.getElementById("alert-box");
+      const content = document.getElementById("alert-content");
+      content.innerHTML = "";
+
+      const overdue = todos.filter(t => statusOf(t) === "overdue").sort((a, b) => a.due.localeCompare(b.due));
+      const today = todos.filter(t => statusOf(t) === "today");
+
+      if (overdue.length === 0 && today.length === 0) {
+        box.className = "card all-clear";
+        const p = document.createElement("p");
+        p.className = "clear-msg";
+        p.textContent = "오늘 마감인 일이 없어요 🙂";
+        content.appendChild(p);
+        return;
+      }
+
+      box.className = "card has-alert";
+
+      const summary = document.createElement("div");
+      summary.className = "alert-summary";
+      if (overdue.length > 0) {
+        const b = document.createElement("span");
+        b.className = "badge overdue";
+        b.textContent = `🔴 마감 지남 ${overdue.length}건`;
+        summary.appendChild(b);
+      }
+      if (today.length > 0) {
+        const b = document.createElement("span");
+        b.className = "badge today";
+        b.textContent = `🟠 오늘 마감 ${today.length}건`;
+        summary.appendChild(b);
+      }
+      content.appendChild(summary);
+
+      const ul = document.createElement("ul");
+      ul.className = "alert-list";
+      overdue.forEach(t => {
+        const li = document.createElement("li");
+        li.className = "overdue";
+        li.textContent = `${t.text} — ${-daysLeft(t.due)}일 지남`;
+        ul.appendChild(li);
+      });
+      today.forEach(t => {
+        const li = document.createElement("li");
+        li.className = "today";
+        li.textContent = `${t.text} — 오늘까지`;
+        ul.appendChild(li);
+      });
+      content.appendChild(ul);
+    }
+
+    function renderList() {
+      const list = document.getElementById("todo-list");
+      list.innerHTML = "";
+
+      if (todos.length === 0) {
+        const p = document.createElement("p");
+        p.className = "empty";
+        p.textContent = "아직 할 일이 없어요. 위에서 할 일을 추가해 보세요.";
+        list.appendChild(p);
+        return;
+      }
+
+      // 미완료 먼저, 그 안에서 마감일 빠른 순
+      const sorted = [...todos].sort((a, b) => {
+        if (a.done !== b.done) return a.done ? 1 : -1;
+        return a.due.localeCompare(b.due);
+      });
+
+      sorted.forEach(todo => {
+        const li = document.createElement("li");
+        li.className = "todo " + statusOf(todo);
+
+        const check = document.createElement("input");
+        check.type = "checkbox";
+        check.checked = todo.done;
+        check.setAttribute("aria-label", "완료 표시");
+        check.addEventListener("change", () => toggleDone(todo.id));
+
+        const text = document.createElement("span");
+        text.className = "text";
+        text.textContent = todo.text;
+
+        const date = document.createElement("span");
+        date.className = "date";
+        date.textContent = formatKoreanDate(todo.due);
+
+        const dday = document.createElement("span");
+        dday.className = "dday";
+        dday.textContent = todo.done ? "완료" : ddayLabel(daysLeft(todo.due));
+
+        const del = document.createElement("button");
+        del.type = "button";
+        del.className = "del-btn";
+        del.textContent = "삭제";
+        del.addEventListener("click", () => deleteTodo(todo.id));
+
+        li.append(check, text, date, dday, del);
+        list.appendChild(li);
+      });
+    }
+
+    function render() {
+      renderToday();
+      renderAlerts();
+      renderList();
+    }
+
+    // ---------- 동작 ----------
+    function showFormMsg(msg) {
+      document.getElementById("form-msg").textContent = msg;
+    }
+
+    function addTodo(text, due) {
+      todos.push({ id: Date.now(), text, due, done: false });
+      saveTodos();
+      render();
+    }
+
+    function toggleDone(id) {
+      const todo = todos.find(t => t.id === id);
+      if (todo) todo.done = !todo.done;
+      saveTodos();
+      render();
+    }
+
+    function deleteTodo(id) {
+      const todo = todos.find(t => t.id === id);
+      if (!todo) return;
+      if (!confirm(`"${todo.text}"을(를) 삭제할까요?`)) return;
+      todos = todos.filter(t => t.id !== id);
+      saveTodos();
+      render();
+    }
+
+    document.getElementById("todo-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const textInput = document.getElementById("todo-text");
+      const dateInput = document.getElementById("todo-date");
+      const text = textInput.value.trim();
+      const due = dateInput.value;
+
+      if (!text) { showFormMsg("할 일 내용을 입력해 주세요."); textInput.focus(); return; }
+      if (!due) { showFormMsg("마감일을 선택해 주세요."); dateInput.focus(); return; }
+
+      addTodo(text, due);
+      showFormMsg("");
+      textInput.value = "";
+      textInput.focus();
+    });
+
+    // 날짜 입력 기본값: 오늘
+    document.getElementById("todo-date").value = todayString();
+
+    // 처음 열 때 예시 자료도 저장해 두기
+    saveTodos();
+    render();
+
+    // 페이지를 켜 둔 채 날짜가 바뀌면(자정) 알림 다시 계산
+    let lastDay = todayString();
+    setInterval(() => {
+      if (todayString() !== lastDay) {
+        lastDay = todayString();
+        render();
+      }
+    }, 60 * 1000);
+  </script>
+</body>
+</html>

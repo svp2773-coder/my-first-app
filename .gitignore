@@ -1,0 +1,17 @@
+# 비밀 정보 (절대 올리지 않기)
+.env
+.env.*
+*.pem
+*.key
+secrets*
+
+# 운영체제·편집기 파일
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.claude/
+
+# 의존성·로그
+node_modules/
+*.log
